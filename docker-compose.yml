@@ -1,0 +1,405 @@
+# Docker Compose para ambiente de desenvolvimento PHP multi-versão
+# Configura serviços PHP-CLI, PHP-FPM, Nginx e Load Balancer para diferentes versões do PHP
+
+##################################################### Template comum ###################################################
+# Template base compartilhado por todos os serviços
+x-service-common: &service-common
+  volumes:
+    - .:/opt/project  # Monta o código fonte no container
+  working_dir: /opt/project
+  user: ${IXCUSER-ixcsoft}:${IXCUSER-ixcsoft}  # Define o usuário para execução
+
+#################################################### Template PHP CLI ##################################################
+# Template para serviços PHP CLI - usado para executar comandos PHP via linha de comando
+x-build-common-php-cli: &build-common-php-cli
+  context: docker/php-cli
+  dockerfile: Dockerfile
+
+x-service-template-php-cli: &service-template-php-cli
+  <<: *service-common
+  build:
+    <<: *build-common-php-cli
+
+#################################################### Template PHP FPM ##################################################
+# Template para serviços PHP-FPM - usado para processar requisições PHP via FastCGI
+x-build-common-php-fpm: &build-common-php-fpm
+  context: docker/php-fpm
+  dockerfile: Dockerfile
+
+x-service-template-php-fpm: &service-template-php-fpm
+  <<: *service-common
+  build:
+    <<: *build-common-php-fpm
+
+##################################################### Template Nginx ###################################################
+# Template para serviços Nginx - usado como servidor web para servir arquivos e encaminhar requisições PHP
+x-build-common-nginx: &build-common-nginx
+  context: docker/nginx
+  dockerfile: Dockerfile
+
+x-service-template-nginx: &service-template-nginx
+  <<: *service-common
+  build:
+    <<: *build-common-nginx
+
+services:
+  #################################################### Serviços PHP CLI ################################################
+  php-cli-74:
+    <<: *service-template-php-cli
+    image: ixcsoft/php-cli:7.4
+    build:
+      <<: *build-common-php-cli
+      args:
+        PHP_VERSION: "7.4"
+
+  php-cli-80:
+    <<: *service-template-php-cli
+    image: ixcsoft/php-cli:8.0
+    build:
+      <<: *build-common-php-cli
+      args:
+        PHP_VERSION: "8.0"
+
+  php-cli-81:
+    <<: *service-template-php-cli
+    image: ixcsoft/php-cli:8.1
+    build:
+      <<: *build-common-php-cli
+      args:
+        PHP_VERSION: "8.1"
+
+  php-cli-82:
+    <<: *service-template-php-cli
+    image: ixcsoft/php-cli:8.2
+    build:
+      <<: *build-common-php-cli
+      args:
+        PHP_VERSION: "8.2"
+
+  php-cli-83:
+    <<: *service-template-php-cli
+    image: ixcsoft/php-cli:8.3
+    build:
+      <<: *build-common-php-cli
+      args:
+        PHP_VERSION: "8.3"
+
+  php-cli-84:
+    <<: *service-template-php-cli
+    image: ixcsoft/php-cli:8.4
+    build:
+      <<: *build-common-php-cli
+      args:
+        PHP_VERSION: "8.4"
+
+  #################################################### Serviços PHP FPM ################################################
+  # Cada serviço PHP-FPM roda uma versão específica do PHP para processar requisições
+  php-fpm-74:
+    <<: *service-template-php-fpm
+    image: ixcsoft/php-fpm:7.4
+    build:
+      <<: *build-common-php-fpm
+      args:
+        PHP_VERSION: "7.4"
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep php-fpm || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+
+  php-fpm-80:
+    <<: *service-template-php-fpm
+    image: ixcsoft/php-fpm:8.0
+    build:
+      <<: *build-common-php-fpm
+      args:
+        PHP_VERSION: "8.0"
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep php-fpm || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  php-fpm-81:
+    <<: *service-template-php-fpm
+    image: ixcsoft/php-fpm:8.1
+    build:
+      <<: *build-common-php-fpm
+      args:
+        PHP_VERSION: "8.1"
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep php-fpm || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  php-fpm-82:
+    <<: *service-template-php-fpm
+    image: ixcsoft/php-fpm:8.2
+    build:
+      <<: *build-common-php-fpm
+      args:
+        PHP_VERSION: "8.2"
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep php-fpm || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  php-fpm-83:
+    <<: *service-template-php-fpm
+    image: ixcsoft/php-fpm:8.3
+    build:
+      <<: *build-common-php-fpm
+      args:
+        PHP_VERSION: "8.3"
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep php-fpm || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  php-fpm-84:
+    <<: *service-template-php-fpm
+    image: ixcsoft/php-fpm:8.4
+    build:
+      <<: *build-common-php-fpm
+      args:
+        PHP_VERSION: "8.4"
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep php-fpm || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ##################################################### Serviços Nginx ###################################################
+  # Cada serviço Nginx é pareado com um PHP-FPM para servir uma versão específica do PHP
+  nginx-fpm-74:
+    <<: *service-template-nginx
+    image: ixcsoft/nginx-fpm:7.4
+    build:
+      <<: *build-common-nginx
+      args:
+        PHP_VERSION: "74"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      php-fpm-74:
+        condition: service_started
+
+  nginx-fpm-80:
+    <<: *service-template-nginx
+    image: ixcsoft/nginx-fpm:8.0
+    build:
+      <<: *build-common-nginx
+      args:
+        PHP_VERSION: "80"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      php-fpm-80:
+        condition: service_started
+
+  nginx-fpm-81:
+    <<: *service-template-nginx
+    image: ixcsoft/nginx-fpm:8.1
+    build:
+      <<: *build-common-nginx
+      args:
+        PHP_VERSION: "81"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      php-fpm-81:
+        condition: service_started
+
+  nginx-fpm-82:
+    <<: *service-template-nginx
+    image: ixcsoft/nginx-fpm:8.2
+    build:
+      <<: *build-common-nginx
+      args:
+        PHP_VERSION: "82"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      php-fpm-82:
+        condition: service_started
+
+  nginx-fpm-83:
+    <<: *service-template-nginx
+    image: ixcsoft/nginx-fpm:8.3
+    build:
+      <<: *build-common-nginx
+      args:
+        PHP_VERSION: "83"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      php-fpm-83:
+        condition: service_started
+
+  nginx-fpm-84:
+    <<: *service-template-nginx
+    image: ixcsoft/nginx-fpm:8.4
+    build:
+      <<: *build-common-nginx
+      args:
+        PHP_VERSION: "84"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      php-fpm-84:
+        condition: service_started
+  ###################################################### Serviço Load Balancer ###########################################
+  # Nginx configurado como proxy reverso para distribuir requisições entre os serviços nginx+php-fpm
+  nginx_lb:
+    image: ixcsoft/nginx-lb:8.4
+    build:
+      context: docker/nginx-lb
+      dockerfile: Dockerfile
+    depends_on:
+      nginx-fpm-74:
+        condition: service_started
+      nginx-fpm-80:
+        condition: service_started
+      nginx-fpm-81:
+        condition: service_started
+      nginx-fpm-82:
+        condition: service_started
+      nginx-fpm-83:
+        condition: service_started
+      nginx-fpm-84:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    ports:
+      - "8080:8080"
+
+  memcached:
+    image: memcached:1.6.21
+    ports:
+      - "11211:11211"
+    healthcheck:
+      test: [ "CMD-SHELL", "pidof memcached" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+#  #################################################### Serviços PostgreSQL ###############################################
+  postgres_primary:
+    image: postgres:16.1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: phpoo_app
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -h localhost -p 5432 || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-primary.sh:/docker-entrypoint-initdb.d/init-primary.sh
+
+  postgres_slave1:
+    image: postgres:16.1
+    environment:
+      POSTGRES_USER: postgres_slave
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: phpoo_app
+      POSTGRES_MASTER_HOST: postgres_primary
+      POSTGRES_MASTER_PORT: 5432
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres_slave -h localhost -p 5432 || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      - postgres_primary
+    volumes:
+      - postgres_slave1_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-slave.sh:/docker-entrypoint-initdb.d/init-slave.sh
+      - ./docker/postgres/slave-entrypoint.sh:/slave-entrypoint.sh
+    entrypoint: ["/slave-entrypoint.sh"]
+
+  postgres_slave2:
+    image: postgres:16.1
+    environment:
+      POSTGRES_USER: postgres_slave
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: phpoo_app
+      POSTGRES_MASTER_HOST: postgres_primary
+      POSTGRES_MASTER_PORT: 5432
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres_slave -h localhost -p 5432 || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      - postgres_primary
+    volumes:
+      - postgres_slave2_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-slave.sh:/docker-entrypoint-initdb.d/init-slave.sh
+      - ./docker/postgres/slave-entrypoint.sh:/slave-entrypoint.sh
+    entrypoint: ["/slave-entrypoint.sh"]
+
+  haproxy:
+    image: haproxy:2.9.1
+    ports:
+      - "8404:8404"  # HAProxy stats/admin port
+    volumes:
+      - ./docker/haproxy:/usr/local/etc/haproxy
+    depends_on:
+      - postgres_primary
+      - postgres_slave1
+      - postgres_slave2
+    healthcheck:
+      test: [ "CMD-SHELL", "timeout 5 bash -c 'echo -e \"GET /stats HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n\" > /dev/tcp/127.0.0.1/8404'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+volumes:
+  postgres_data:
+  postgres_slave1_data:
+  postgres_slave2_data:
