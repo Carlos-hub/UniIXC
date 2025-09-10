@@ -44,10 +44,10 @@ final class App
 
     private function loadServiceDefinitions(ContainerBuilder $builder): void
     {
-        // Os service definitions serão carregados automaticamente
         $serviceDefinitions = [
             new \App\Bootstrap\Impl\ExampleServiceDefinition(),
             new \App\Bootstrap\Impl\DatabaseServiceDefinition(),
+            new \App\Bootstrap\Impl\DatabaseConnectionDefinition(), // Nova definição
         ];
 
         foreach ($serviceDefinitions as $serviceDefinition) {
